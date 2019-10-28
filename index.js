@@ -11,6 +11,7 @@ app.use(express.static('public'));
 
 server.listen(port, () => console.log(`Example app listening on port ${port}!`));
 
+io.set('transports', ['websocket']);
 io.on('connection', function (socket) {
     console.log('a user connected');
     socket.on('disconnect', function(){
