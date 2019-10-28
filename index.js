@@ -10,6 +10,8 @@ const app = express(),
 
 app.use(express.static('public'));
 
+const users = {};
+
 rabbit().then((r) =>{
     io.on('connection', function (socket) {
         io.set('transports', ['websocket']);
@@ -24,6 +26,10 @@ rabbit().then((r) =>{
         socket.on('disconnect', function(){
             console.log('user disconnected');
         });
+
+        socket.on('newNickname', function(nickname){
+            users[socket.id] = nickname;
+        });    
     
         socket.on('msgFromClient', function(msg){
             r.publish(msg);

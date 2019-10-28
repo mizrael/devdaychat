@@ -10,28 +10,37 @@
         <div class="container">
             <h1>DevDay Chat</h1>
 
-            <div class="row">      
-                <div class="col">    
-                    <textarea id="chat" readonly class="w-100" style="min-height:200px;"></textarea>
-                </div>
+            <div id="setNickname">
+                <form>
+                    <div class="form-group row">                
+                        <div class="col-12 col-sm-11 mb-2">
+                            <input type="text" class="form-control" id="nickname" placeholder="set your Nickname">
+                        </div>                
+                        <div class="col-12 col-sm-1">
+                            <button type="submit" class="btn btn-primary btn-block">Send</button>
+                        </div> 
+                    </div>                      
+                </form>
             </div>
 
-            <form>
-                <div class="form-group row">                
-                    <div class="col-12 col-sm-11 mb-2">
-                        <input type="text" id="message" class="form-control" placeholder="type your message here...">
-                    </div>                
-                    <div class="col-12 col-sm-1">
-                        <button type="submit" class="btn btn-primary btn-block">Send</button>
-                    </div> 
-                </div>       
-                
-                <div class="form-group row">                
-                    <div class="col-12 col-sm-11 mb-2">
-                        <input type="text" class="form-control" id="nickname" placeholder="set your Nickname">
-                    </div>               
-                </div>       
-            </form>
+            <div id="chatPage" class="d-none">
+                <div class="row">      
+                    <div class="col">    
+                        <textarea id="chat" readonly class="w-100" style="min-height:200px;"></textarea>
+                    </div>
+                </div>
+
+                <form>
+                    <div class="form-group row">                
+                        <div class="col-12 col-sm-11 mb-2">
+                            <input type="text" id="message" class="form-control" placeholder="type your message here...">
+                        </div>                
+                        <div class="col-12 col-sm-1">
+                            <button type="submit" class="btn btn-primary btn-block">Send</button>
+                        </div> 
+                    </div>                       
+                </form>
+            </div>
 
             <p><small>source code is available on <a href="https://github.com/mizrael/devdaychat" target="_blank">GitHub</a>.</small></p>
         </div>     
@@ -42,50 +51,68 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js" integrity="sha256-bQmrZe4yPnQrLTY+1gYylfNMBuGfnT/HKsCGX+9Xuqo=" crossorigin="anonymous"></script>
         <script type="text/javascript">
             $(() => {
-                const $chat = $("#chat"),
-                    $form = $("form"),
-                    $text = $form.find('#message'),
-                    $nickname = $form.find('#nickname'),
-                    $submit = $form.find('button[type="submit"]'),
-                    socket = io.connect({transports: ['websocket']}),
-                
-                    getNickname = () =>{
-                        return $nickname.val() || socket.id;
-                    },
+                const socket = io.connect({transports: ['websocket']}),
+                    $setNicknamePage = $('#setNickname'),
+                    $chatPage = $('#chatPage');
 
-                    appendMessage = (msg) =>{
-                        $chat.append(`[${msg.nickname}]> ${msg.text}`).append('\n');
-                        $chat.scrollTop($chat[0].scrollHeight);
-                    };
+                let nickname = '';
 
-                $submit.prop('disabled', true);
+                const setupNickname = () =>{
+                    const $form = $setNicknamePage.find("form"),
+                        $nickname = $form.find('#nickname'),
+                        $submit = $form.find('button[type="submit"]');
 
-                $text.keyup((e) =>{
-                    const msg = $text.val();
-                    if(!msg.trim().length){
-                        $submit.prop('disabled', true);
-                    }else{
-                        $submit.prop('disabled', false);
-                    }                    
-                });
+                        $submit.click((e) =>{
+                            e.preventDefault();
 
-                $submit.click((e) =>{
-                    e.preventDefault();
+                            nickname = $nickname.val();
+                            socket.emit('newNickname', nickname);
 
-                    const msg = $text.val();
-                    if(!msg.trim().length){
-                        return;
-                    }
+                            $setNicknamePage.addClass('d-none');
+                            $chatPage.removeClass('d-none');
+                        });
+                    }, setupChat = ()=>{
+                    const $chat = $chatPage.find("#chat"),
+                        $form = $chatPage.find("form"),
+                        $text = $form.find('#message'),
+                        $submit = $form.find('button[type="submit"]'),                        
 
-                    socket.emit('msgFromClient', {text: msg, nickname: getNickname()});
-                    $text.val('');
+                        appendMessage = (msg) =>{
+                            $chat.append(`[${msg.nickname}]> ${msg.text}`).append('\n');
+                            $chat.scrollTop($chat[0].scrollHeight);
+                        };
+
                     $submit.prop('disabled', true);
-                });
 
-                socket.on('msgFromServer', function (data) {                    
-                    appendMessage(data);
-                });
+                    $text.keyup((e) =>{
+                        const msg = $text.val();
+                        if(!msg.trim().length){
+                            $submit.prop('disabled', true);
+                        }else{
+                            $submit.prop('disabled', false);
+                        }                    
+                    });
 
+                    $submit.click((e) =>{
+                        e.preventDefault();
+
+                        const msg = $text.val();
+                        if(!msg.trim().length){
+                            return;
+                        }
+
+                        socket.emit('msgFromClient', {text: msg, nickname: nickname });
+                        $text.val('');
+                        $submit.prop('disabled', true);
+                    });
+
+                    socket.on('msgFromServer', function (data) {                    
+                        appendMessage(data);
+                    });
+                };        
+                
+                setupNickname();
+                setupChat();
             });
         </script>
     </body>
