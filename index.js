@@ -9,10 +9,8 @@ const app = express(),
 
 app.use(express.static('public'));
 
-server.listen(port, () => console.log(`Example app listening on port ${port}!`));
-
-io.set('transports', ['websocket']);
 io.on('connection', function (socket) {
+    io.set('transports', ['websocket']);
     console.log('a user connected');
     socket.on('disconnect', function(){
         console.log('user disconnected');
@@ -24,3 +22,5 @@ io.on('connection', function (socket) {
         io.emit('msgFromServer', msg);
     });
 });
+
+server.listen(port, () => console.log(`Example app listening on port ${port}!`));
