@@ -1,7 +1,8 @@
 const express = require('express'),
     http = require('http'),
-    socket = require('socket.io');
-
+    socket = require('socket.io'),
+    rabbit = require('./rabbit');
+    
 const app = express(),
     port = process.env.PORT || 3000,
     server = http.Server(app),
@@ -9,18 +10,26 @@ const app = express(),
 
 app.use(express.static('public'));
 
-io.on('connection', function (socket) {
-    io.set('transports', ['websocket']);
-    console.log('a user connected');
-    socket.on('disconnect', function(){
-        console.log('user disconnected');
+rabbit((data) =>{
+    const msg = JSON.parse(data.toString());    
+    io.emit('msgFromServer', msg);
+}).then((r) =>{
+    io.on('connection', function (socket) {
+        io.set('transports', ['websocket']);
+    
+        console.log('a user connected');
+    
+        socket.on('disconnect', function(){
+            console.log('user disconnected');
+        });
+    
+        socket.on('msgFromClient', function(msg){
+            console.log('message: ' + JSON.stringify(msg));
+    
+            r.publish(msg);
+        });    
     });
-
-    socket.on('msgFromClient', function(msg){
-        console.log('message: ' + JSON.stringify(msg));
-
-        io.emit('msgFromServer', msg);
-    });
+    
+    server.listen(port, () => console.log(`Example app listening on port ${port}!`));
 });
 
-server.listen(port, () => console.log(`Example app listening on port ${port}!`));
