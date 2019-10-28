@@ -1,27 +1,15 @@
-// import amqp from 'amqplib';
 const amqp = require('amqplib');
 
 const connStr = 'amqp://kchrqvmu:1dTH_RsBAzzyUmrQ8THE05FacFemFSiW@dove.rmq.cloudamqp.com/kchrqvmu',
-    exchangeName = 'devday',
-    queueName = 'messages';
+    exchangeName = 'devday';
 
-const init = async (onReceived) =>{
+const init = async () =>{
     const
         conn = await amqp.connect(connStr),
         pubChan = await conn.createChannel(),
         subChan = await conn.createChannel();
-        
-    await subChan.assertExchange(exchangeName, 'fanout', {durable: false});
-    await subChan.assertQueue(queueName);
-    subChan.consume(queueName, function(msg) {
-        if(msg.content && onReceived) {
-            onReceived(msg.content);            
-        }
-    }, {
-        noAck: true
-    });
 
-    await pubChan.bindQueue(queueName, exchangeName, '');
+    await subChan.assertExchange(exchangeName, 'fanout', {durable: false});
     
     process.on('exit', (code) => {
         if(pubChan){
@@ -37,10 +25,23 @@ const init = async (onReceived) =>{
         publish: (data) => {         
             try{
                 const msg = Buffer.from(JSON.stringify(data));
-                pubChan.sendToQueue(queueName, msg);
+                pubChan.publish(exchangeName, '', msg);
             }catch(e){
                 console.error(`an error has occurred while publishing message: ${JSON.stringify(e)}`);
             }            
+        },
+        subscribe : async (onReceived) =>{            
+            const queue = await subChan.assertQueue('', {exclusive: true});
+            
+            await subChan.bindQueue(queue.queue, exchangeName, '');
+
+            subChan.consume(queue.queue, function(msg) {
+                if(msg.content && onReceived) {
+                    onReceived(msg.content);            
+                }
+            }, {
+                noAck: true
+            });
         }
     };
 };

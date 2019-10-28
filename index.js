@@ -10,22 +10,22 @@ const app = express(),
 
 app.use(express.static('public'));
 
-rabbit((data) =>{
-    const msg = JSON.parse(data.toString());    
-    io.emit('msgFromServer', msg);
-}).then((r) =>{
+rabbit().then((r) =>{
     io.on('connection', function (socket) {
         io.set('transports', ['websocket']);
     
         console.log('a user connected');
+
+        r.subscribe((data) =>{
+            const msg = JSON.parse(data.toString());    
+            io.emit('msgFromServer', msg);
+        });
     
         socket.on('disconnect', function(){
             console.log('user disconnected');
         });
     
         socket.on('msgFromClient', function(msg){
-            console.log('message: ' + JSON.stringify(msg));
-    
             r.publish(msg);
         });    
     });
