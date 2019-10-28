@@ -24,14 +24,17 @@ rabbit().then((r) =>{
         });
     
         socket.on('disconnect', function(){
+            delete users[socket.id];      
+            
             r.unsubscribe(socket.id).then(() =>{
                 const name = users[socket.id] || socket.id;
                 console.log(`user ${name} disconnected`);
-            });            
+            });                  
         });
 
         socket.on('newNickname', function(nickname){
             users[socket.id] = nickname;
+            io.emit('users', users);
         });    
     
         socket.on('msgFromClient', function(msg){
