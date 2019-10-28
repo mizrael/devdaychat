@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+    <head>        
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <title>DevDay Chat</title>
+    </head>
+    <body>
+        <div class="container">
+            <h1>DevDay Chat</h1>
+
+            <div class="row">      
+                <div class="col">    
+                    <textarea id="chat" readonly class="w-100" style="min-height:200px;"></textarea>
+                </div>
+                
+            </div>
+
+            <form>
+                <div class="form-group row">                
+                    <div class="col-12 col-sm-11 mb-2">
+                        <input type="text" id="message" class="form-control" placeholder="type your message here...">
+                    </div>                
+                    <div class="col-12 col-sm-1">
+                        <button type="submit" class="btn btn-primary btn-block">Send</button>
+                    </div> 
+                </div>       
+                
+                <div class="form-group row">                
+                    <div class="col-12 col-sm-11 mb-2">
+                        <input type="text" class="form-control" id="nickname" placeholder="set your Nickname">
+                    </div>               
+                </div>       
+            </form>
+        </div>     
+
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript">
+            $(() => {
+                const $chat = $("#chat"),
+                    $form = $("form"),
+                    $text = $form.find('#message'),
+                    $nickname = $form.find('#nickname'),
+                    $submit = $form.find('button[type="submit"]'),
+                    socket = io.connect(),
+                
+                    getNickname = () =>{
+                        return $nickname.val() || socket.id;
+                    },
+
+                    appendMessage = (msg) =>{
+                        $chat.append(`[${msg.nickname}]> ${msg.text}`).append('\n');
+                        $chat.scrollTop($chat[0].scrollHeight);
+                    };
+
+                $submit.prop('disabled', true);
+
+                $text.keyup((e) =>{
+                    const msg = $text.val();
+                    if(!msg.trim().length){
+                        $submit.prop('disabled', true);
+                    }else{
+                        $submit.prop('disabled', false);
+                    }                    
+                });
+
+                $submit.click((e) =>{
+                    e.preventDefault();
+
+                    const msg = $text.val();
+                    if(!msg.trim().length){
+                        return;
+                    }
+
+                    socket.emit('msgFromClient', {text: msg, nickname: getNickname()});
+                    $text.val('');
+                    $submit.prop('disabled', true);
+                });
+
+                socket.on('msgFromServer', function (data) {                    
+                    appendMessage(data);
+                });
+
+            });
+        </script>
+    </body>
+</html>
