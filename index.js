@@ -29,7 +29,9 @@ rabbit().then((r) =>{
             r.unsubscribe(socket.id).then(() =>{
                 const name = users[socket.id] || socket.id;
                 console.log(`user ${name} disconnected`);
-            });                  
+            });                
+            
+            io.emit('users', users);
         });
 
         socket.on('newNickname', function(nickname){
