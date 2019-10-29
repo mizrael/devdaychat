@@ -5,7 +5,7 @@ const connStr = 'amqp://kchrqvmu:1dTH_RsBAzzyUmrQ8THE05FacFemFSiW@dove.rmq.cloud
 
 const init = async () =>{
     const conn = await amqp.connect(connStr),
-        pubChan = await conn.createChannel(),
+        pubChan = await conn.createChannel(),        
         subChan = await conn.createChannel(),
         subscriptions = {};
 
@@ -14,10 +14,10 @@ const init = async () =>{
     process.on('exit', (code) => {
         if(pubChan){
             pubChan.close();
-        }
+        }     
         if(subChan){
             subChan.close();
-        }
+        }        
         console.log(`Closing rabbitmq channel`);
     });
 
@@ -43,13 +43,15 @@ const init = async () =>{
                 noAck: true
             });
 
-            subscriptions[id] = queue;
+            subscriptions[id] = {                
+                queue: queue
+            };
         },
         unsubscribe: async (id) =>{
-            const queue = subscriptions[id];
-            if(queue){
-                await subChan.unbindQueue(queue.queue, exchangeName, '');
-                await subChan.deleteQueue(queue.queue);
+            const subscriber = subscriptions[id];
+            if(subscriber){
+                await subChan.unbindQueue(subscriber.queue.queue, exchangeName, '');
+                await subChan.deleteQueue(subscriber.queue.queue);                
             }          
         }
     };

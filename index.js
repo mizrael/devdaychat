@@ -20,7 +20,7 @@ rabbit().then((r) =>{
 
         r.subscribe(socket.id, (data) =>{
             const msg = JSON.parse(data.toString());    
-            io.emit('msgFromServer', msg);
+            socket.emit('msgFromServer', msg);
         });
     
         socket.on('disconnect', function(){
